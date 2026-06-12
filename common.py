@@ -1,18 +1,13 @@
 """
 Shared logic for analyze.py and browse.py.
-Re-exports geoip, provides static-load filtering and match construction.
+Provides static-load filtering and match construction.
 """
 
-from geoip import lookup as geo_lookup, COUNTRY_WHITELIST, IP_WHITELIST  # noqa: F401
+from geoip import lookup as geo_lookup                               # noqa: F401
+from config import STATIC_EXTS, COUNTRY_WHITELIST, IP_WHITELIST     # noqa: F401
+
 
 # ─── Static asset noise filter ───────────────────────────────────────────────
-
-_STATIC_EXTS = (
-    ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
-    ".ico", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".mp3", ".webm",
-    ".pdf", ".zip", ".gz", ".tar",
-)
-
 
 def _is_static_load(entry: dict) -> bool:
     """True if this is a GET for a static file with a non-empty referrer."""
@@ -22,7 +17,7 @@ def _is_static_load(entry: dict) -> bool:
     if not ref or ref == "-":
         return False
     url_lower = entry["url"].lower()
-    for ext in _STATIC_EXTS:
+    for ext in STATIC_EXTS:
         if url_lower.endswith(ext) or (ext + "?") in url_lower:
             return True
     return False

@@ -1,21 +1,13 @@
 """
-Shared GeoIP lookup with caching. Uses system `geoiplookup` command.
-Install: sudo apt install geoip-bin geoip-database
+GeoIP lookup with caching.
+Configuration (whitelists, command) loaded from config.json via config.py.
 """
 
-import re
 import subprocess
 
+from config import COUNTRY_WHITELIST, IP_WHITELIST, GEOIP_CMD, GEOIP_RE
+
 _cache = {}
-
-# Whitelisted countries — matches from these get skipped entirely
-COUNTRY_WHITELIST = {"CN", "IN", "LK"}
-
-# Whitelisted IP addresses — matches from these get skipped entirely
-IP_WHITELIST = {"192.168.1.2"}
-
-# Regex to extract country code from: "GeoIP Country Edition: US, United States"
-_RE = re.compile(r"GeoIP Country Edition:\s*([A-Z]{2})")
 
 
 def lookup(ip: str) -> str | None:
@@ -25,10 +17,10 @@ def lookup(ip: str) -> str | None:
 
     try:
         result = subprocess.run(
-            ["geoiplookup", ip],
+            [GEOIP_CMD, ip],
             capture_output=True, text=True, timeout=2,
         )
-        m = _RE.search(result.stdout)
+        m = GEOIP_RE.search(result.stdout)
         code = m.group(1) if m else None
         # "IP" means "IP Address not found" — not a real country
         if code == "IP":
