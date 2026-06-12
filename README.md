@@ -168,7 +168,7 @@ All configurable settings live in `config.json`:
 | `log_format` | `regex` | *(combined log format)* | Python regex to parse log lines. Must have 9 capture groups for IP, timestamp, method, URL, protocol, status, size, referrer, user-agent. |
 | `log_format` | `timestamp_format` | `%d/%b/%Y:%H:%M:%S %z` | `strptime` format for the timestamp in log entries. |
 | `patterns_file` | — | `patterns.json` | Path to the pattern definitions file. Relative paths resolve from the config file's directory. |
-| `whitelists` | `countries` | `["SI", "RS", "LK"]` | Two-letter country codes to ignore. Matches from these IPs are silently dropped. |
+| `whitelists` | `countries` | `["CN", "IN", "LK"]` | Two-letter country codes to ignore. Matches from these IPs are silently dropped. |
 | `whitelists` | `ips` | `["192.168.1.2"]` | Specific IP addresses to ignore (e.g. internal hosts, monitoring services). |
 | `geoip` | `command` | `geoiplookup` | Command to run for GeoIP lookups. Swap to `mmdblookup`, `geoiplookup6`, or any tool that outputs the country code on stdout. |
 | `geoip` | `regex_search` | `GeoIP Country Edition:\s*([A-Z]{2})` | Regex to extract the two-letter country code from the GeoIP command's output. First capture group must yield the code. |

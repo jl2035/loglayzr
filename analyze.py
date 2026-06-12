@@ -89,6 +89,11 @@ def main():
         print(f"Error: not found: {log_path}", file=sys.stderr)
         sys.exit(1)
 
+    print()
+    print(f"==========================================================")
+    print(f"====================== LOGLAYZR ==========================")
+    print(f"==========================================================\n")
+
     log_paths = resolve_log_paths(log_path)
     if not log_paths:
         print(f"Error: no log files found: {log_path}", file=sys.stderr)
@@ -116,13 +121,20 @@ def main():
     hits_by_country = Counter()         # country → match count (non-whitelisted)
     ip_patterns = defaultdict(Counter)  # IP → {pattern_name: count}
 
-    for log_path in log_paths:
+    print()
+    print(f"Loaded {len(patterns)} patterns from {PATTERNS_FILE}")
+    print()
+
+    for i, log_path in enumerate(log_paths, 1):
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name} ... ", end="", flush=True, file=sys.stderr)
+        file_lines = 0
         for line in iter_log_lines(log_path):
             entry = parse_line(line)
             if entry is None:
                 skipped += 1
                 continue
             parsed += 1
+            file_lines += 1
 
             # Apply all filters (static load, IP whitelist, country whitelist)
             if should_skip(entry):
@@ -144,19 +156,10 @@ def main():
                 if "cc" in match:
                     hits_by_country[match["cc"]] += 1
 
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name}  {file_lines:>8,} lines \u2713", file=sys.stderr)
 
 
-    #print()
-    #print("─── MATCHES (JSONL) ───")
-    #print()
-    #print(f"=== LOG ANALYSIS: {log_path.name} ===")
-
-    # ── Matches (JSONL) ──────────────────────────────────────────────────────
-
-    #for m in matches:
-    #    print(json.dumps(m, ensure_ascii=False))
-
-    # ── Summary footer ───────────────────────────────────────────────────────
+    # ── Summary ──────────────────────────────────────────────────────────────
     print()
     if len(log_paths) == 1:
         print(f"=== SUMMARY: {log_paths[0].name} ===")

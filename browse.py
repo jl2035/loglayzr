@@ -150,13 +150,20 @@ def main():
         print(f"Error: not found: {log_path}", file=sys.stderr)
         sys.exit(1)
 
+    print()
+    print(f"==========================================================")
+    print(f"====================== LOGLAYZR ==========================")
+    print(f"==========================================================\n")
+
     log_paths = resolve_log_paths(log_path)
     if not log_paths:
         print(f"Error: no log files found: {log_path}", file=sys.stderr)
         sys.exit(1)
 
     patterns, pat_lookup = load_patterns()
+    print()
     print(f"Loaded {len(patterns)} patterns from {PATTERNS_FILE}")
+    print()
 
     # ── Parse log(s), collect enriched matches ────────────────────────────────
 
@@ -164,7 +171,8 @@ def main():
     skipped = 0
     matches = []              # full match dicts for browsing
 
-    for log_path in log_paths:
+    for i, log_path in enumerate(log_paths, 1):
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name} ... ", end="", flush=True, file=sys.stderr)
         file_parsed = 0
         for line in iter_log_lines(log_path):
             entry = parse_line(line)
@@ -187,9 +195,10 @@ def main():
                 )
                 matches.append(match)
 
-        print(f"  {log_path.name}: {file_parsed} lines", flush=True)
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name}  {file_parsed:>8,} lines \u2713", file=sys.stderr)
 
-    print(f" done. {len(matches)} total matches across {len(log_paths)} file(s).")
+    print()
+    print(f"Done. {len(matches)} total matches across {len(log_paths)} file(s).")
 
     if not matches:
         print("No suspicious activity found. Clean logs!")
