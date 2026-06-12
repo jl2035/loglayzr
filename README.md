@@ -10,8 +10,10 @@ A zero-dependency Python toolkit for scanning Apache/Nginx combined-format acces
 - **GeoIP enrichment** — tags matches with country codes; whitelist your own countries to suppress noise
 - **IP whitelist** — ignore known-safe IPs (internal servers, monitoring)
 - **Static asset noise filter** — skips legitimate CSS/JS/image loads from real page views
+- **Directory mode** — pass a directory instead of a file to scan all logs recursively (handles `.gz` transparently)
 - **Two interfaces** — summary report (`analyze.py`) and interactive browser (`browse.py`)
 - **Pipeline-friendly** — JSONL output, pipe to `jq`, `grep`, or any Unix tool
+- **All configuration in one file** — log format, whitelists, GeoIP command, filter settings live in `config.json`
 
 ## Requirements
 
@@ -27,34 +29,48 @@ No Python packages outside the standard library.
 ## Quick start
 
 ```bash
-# Summary of all suspicious activity
+# Summary of all suspicious activity in one file
 python3 analyze.py logs/access.log
+
+# Or process an entire directory (recursive, .gz supported)
+python3 analyze.py logs/
 
 # Save to a report file
 python3 analyze.py logs/access.log > reports/site.report.txt
 
 # Only critical hits
-python3 analyze.py logs/access.log | grep '"sev":"CRITICAL"'
+python3 analyze.py logs/ | grep '"sev":"CRITICAL"'
 
-# Browse matches interactively (select category → pattern → P/N/Q)
+# Browse matches interactively (select category → pattern → browse)
 python3 browse.py logs/access.log
 
-# Aggregate by country
-python3 analyze.py logs/access.log | grep '^{' | \
+# Aggregate by country across all logs in a directory
+python3 analyze.py logs/ | grep '^{' | \
     jq -s 'group_by(.cc) | map({cc: .[0].cc, count: length}) | sort_by(-.count)'
 ```
 
 ## analyze.py — summary report
 
 ```
-python3 analyze.py <logfile>
+python3 analyze.py <file|directory>
 ```
 
-Outputs a plain-text summary header followed by JSONL match lines.
+Accepts a single log file or a directory (walked recursively, `.gz` files decompressed on the fly, hidden files and known binary extensions skipped). All matches are aggregated into a single combined summary.
 
-**Summary header:**
+**Single-file summary:**
 ```
 === SUMMARY: access.log ===
+```
+
+**Multi-file summary:**
+```
+=== SUMMARY: logs/ (42 files) ===
+```
+
+**Full example:**
+```
+=== SUMMARY: access.log ===
+
 Lines parsed:    9,277
 Suspicious hits: 1,613
 
@@ -79,28 +95,22 @@ Suspicious hits: 1,613
     ...
 ```
 
-**JSONL match lines** (after the summary):
-```json
-{"ts":"2026-06-11T06:31:33+02:00","ip":"136.109.155.86","m":"GET","url":"/symfony/.env","st":301,"sz":194,"pat":"env_file_probe","cat":"config_scraping","sev":"HIGH","cc":"US","ua":"Mozilla/5.0 ..."}
-```
-
 ## browse.py — interactive investigation
 
 ```
-python3 browse.py <logfile>
+python3 browse.py <file|directory>
 ```
 
-1. Choose a **category** (or All)
-2. Choose a **pattern** (or All)
-3. Browse matches one at a time
+Also accepts a file or directory. Parses all logs, then presents menus to choose a category and pattern, then lets you browse matches one at a time.
 
 | Key | Action |
 |-----|--------|
 | `N` / `Enter` / `Space` | Next match |
 | `P` / `Backspace` | Previous match |
-| `Q` / `Ctrl+C` | Quit |
+| `B` | Back to category/pattern menu |
+| `Q` / `Ctrl+C` | Quit (works from menus too) |
 
-Each match shows severity, pattern description, full log entry, and country code for non-whitelisted IPs.
+Each match shows severity (color-coded), pattern description, full log entry, and country code for non-whitelisted IPs.
 
 ## Patterns
 
@@ -120,19 +130,63 @@ Detection rules live in `patterns.json`. Each pattern has:
 
 Add new patterns by editing `patterns.json` — no code changes needed.
 
-## Whitelists
+## Configuration
 
-Configured in `geoip.py`:
+All configurable settings live in `config.json`:
 
-```python
-# Countries to ignore (no matches from these IPs)
-COUNTRY_WHITELIST = {"CN", "IN", "LK"}
+```json
+{
+    "log_format": {
+        "regex": "^(\\S+) \\S+ \\S+ \\[([^\\]]+)\\] \"(\\S+) (\\S+) (\\S+)\" (\\d{3}) (\\S+) \"([^\"]*)\" \"([^\"]*)\"",
+        "timestamp_format": "%d/%b/%Y:%H:%M:%S %z"
+    },
 
-# IPs to ignore (no matches from these addresses)
-IP_WHITELIST = {"192.168.1.2"}
+    "patterns_file": "patterns.json",
+
+    "whitelists": {
+        "countries": ["CN", "IN", "LK"],
+        "ips": ["192.168.1.2"]
+    },
+
+    "geoip": {
+        "command": "geoiplookup",
+        "regex_search": "GeoIP Country Edition:\\s*([A-Z]{2})"
+    },
+
+    "filters": {
+        "static_extensions": [
+            ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+            ".ico", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".mp3", ".webm",
+            ".pdf", ".zip", ".gz", ".tar"
+        ]
+    }
+}
 ```
 
-Matches from whitelisted countries or IPs are silently dropped.
+| Section | Setting | Default | Description |
+|---------|---------|---------|-------------|
+| `log_format` | `regex` | *(combined log format)* | Python regex to parse log lines. Must have 9 capture groups for IP, timestamp, method, URL, protocol, status, size, referrer, user-agent. |
+| `log_format` | `timestamp_format` | `%d/%b/%Y:%H:%M:%S %z` | `strptime` format for the timestamp in log entries. |
+| `patterns_file` | — | `patterns.json` | Path to the pattern definitions file. Relative paths resolve from the config file's directory. |
+| `whitelists` | `countries` | `["CN", "IN", "LK"]` | Two-letter country codes to ignore. Matches from these IPs are silently dropped. |
+| `whitelists` | `ips` | `["192.168.1.2"]` | Specific IP addresses to ignore (e.g. internal hosts, monitoring services). |
+| `geoip` | `command` | `geoiplookup` | Command to run for GeoIP lookups. Swap to `mmdblookup`, `geoiplookup6`, or any tool that outputs the country code on stdout. |
+| `geoip` | `regex_search` | `GeoIP Country Edition:\s*([A-Z]{2})` | Regex to extract the two-letter country code from the GeoIP command's output. First capture group must yield the code. |
+| `filters` | `static_extensions` | *(see above)* | File extensions that trigger the static-load noise filter when combined with a GET method and non-empty referrer. |
+
+Missing or misconfigured settings fall back to sensible defaults — `config.json` can be sparse.
+
+## Filter pipeline
+
+Each log line passes through filters in order before pattern matching:
+
+1. **Log file resolution** — if a directory was passed, walk it recursively. Skip hidden files/dirs and known binary extensions. Decompress `.gz` on the fly.
+2. **Static load** — GET + static extension (`.js`, `.css`, `.png`, …) + non-empty referrer → skip
+3. **IP whitelist** — IP in `IP_WHITELIST` → skip
+4. **Country whitelist** — IP resolves to a country in `COUNTRY_WHITELIST` → skip
+5. **Pattern matching** — remaining entries checked against all 57 patterns
+
+Filters are defined in `common.py` — add new ones in `should_skip()`.
 
 ## File structure
 
@@ -140,23 +194,14 @@ Matches from whitelisted countries or IPs are silently dropped.
 loglayzr/
 ├── analyze.py        # Summary report script
 ├── browse.py         # Interactive match browser
-├── common.py         # Shared filtering + match construction
-├── geoip.py          # GeoIP lookups + whitelist configuration
+├── common.py         # Shared filtering, match construction, file resolution
+├── config.py         # Configuration loader (reads config.json)
+├── config.json       # User-facing configuration file
+├── geoip.py          # GeoIP lookups with caching
 ├── patterns.json     # Suspicious pattern definitions (57 rules)
 ├── LICENSE           # GPLv3
 └── README.md
 ```
-
-## Filter pipeline
-
-Each log line passes through filters in order before pattern matching:
-
-1. **Static load** — GET + static extension (`.js`, `.css`, `.png`, …) + non-empty referrer → skip
-2. **IP whitelist** — IP in `IP_WHITELIST` → skip
-3. **Country whitelist** — IP resolves to a country in `COUNTRY_WHITELIST` → skip
-4. **Pattern matching** — remaining entries checked against all 57 patterns
-
-Filters are defined in `common.py` — add new ones in `should_skip()`.
 
 ## License
 

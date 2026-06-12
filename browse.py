@@ -2,9 +2,11 @@
 """
 Interactive match browser for access log analysis.
 Select a category and pattern, then browse suspicious hits one at a time.
+Accepts a file or a directory (walked recursively, .gz supported).
 
 Usage:
     python3 browse.py <logfile>
+    python3 browse.py <directory>
 
 Keys in browse mode:
     N / Enter / Right  →  next match
@@ -24,6 +26,7 @@ from pathlib import Path
 from analyze import parse_line, match_patterns, PATTERNS_FILE
 from common import should_skip, build_match, COUNTRY_WHITELIST
 from common import geo_lookup  # for summary display
+from common import resolve_log_paths, iter_log_lines
 
 # ─── Terminal helpers ────────────────────────────────────────────────────────
 
@@ -143,29 +146,40 @@ def main():
         sys.exit(1)
 
     log_path = Path(sys.argv[1])
-    if not log_path.is_file():
-        print(f"Error: file not found: {log_path}", file=sys.stderr)
+    if not log_path.exists():
+        print(f"Error: not found: {log_path}", file=sys.stderr)
+        sys.exit(1)
+
+    print()
+    print(f"==========================================================")
+    print(f"====================== LOGLAYZR ==========================")
+    print(f"==========================================================\n")
+
+    log_paths = resolve_log_paths(log_path)
+    if not log_paths:
+        print(f"Error: no log files found: {log_path}", file=sys.stderr)
         sys.exit(1)
 
     patterns, pat_lookup = load_patterns()
+    print()
     print(f"Loaded {len(patterns)} patterns from {PATTERNS_FILE}")
+    print()
 
-    # ── Parse log, collect enriched matches ──────────────────────────────────
+    # ── Parse log(s), collect enriched matches ────────────────────────────────
 
-    print(f"Parsing {log_path.name} ...", end="", flush=True)
     parsed = 0
     skipped = 0
     matches = []              # full match dicts for browsing
 
-    with open(log_path, errors="replace") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
+    for i, log_path in enumerate(log_paths, 1):
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name} ... ", end="", flush=True, file=sys.stderr)
+        file_parsed = 0
+        for line in iter_log_lines(log_path):
             entry = parse_line(line)
             if entry is None:
                 skipped += 1
                 continue
+            file_parsed += 1
             parsed += 1
 
             # Apply all filters (static load, IP whitelist, country whitelist)
@@ -181,7 +195,10 @@ def main():
                 )
                 matches.append(match)
 
-    print(f" done. {parsed} lines, {len(matches)} matches.")
+        print(f"\r\x1b[K  [{i:>3}/{len(log_paths)}] {log_path.name}  {file_parsed:>8,} lines \u2713", file=sys.stderr)
+
+    print()
+    print(f"Done. {len(matches)} total matches across {len(log_paths)} file(s).")
 
     if not matches:
         print("No suspicious activity found. Clean logs!")
