@@ -43,10 +43,15 @@ def clear_screen():
     print("\033[2J\033[H", end="")
 
 
+_QUIT = object()  # sentinel returned when user presses Q at a menu
+
+
 def select_from_list(items, prompt, all_label="All"):
     """
-    Show a numbered list and return the selected (label, value) tuple,
-    or None for 'All'.
+    Show a numbered list and return:
+      None       → 'All' selected (0)
+      <value>    → specific item chosen
+      _QUIT      → user pressed Q to exit
     Each item is (label, value, count) — count is shown in parens.
     """
     print(f"\n{prompt}")
@@ -56,9 +61,11 @@ def select_from_list(items, prompt, all_label="All"):
 
     while True:
         try:
-            raw = input("\nChoice [0-{}]: ".format(len(items))).strip()
+            raw = input(f"\nChoice [0-{len(items)}, Q to quit]: ").strip()
             if not raw:
                 continue
+            if raw.lower() == 'q':
+                return _QUIT
             idx = int(raw)
             if idx == 0:
                 return None
@@ -197,6 +204,10 @@ def main():
             "Select category:",
             all_label="All categories",
         )
+        if chosen_cat is _QUIT:
+            clear_screen()
+            print("Bye.")
+            return
 
         # ── Step 2: pick pattern (filtered by category) ───────────────────────
 
@@ -214,6 +225,10 @@ def main():
             "Select pattern:",
             all_label="All patterns",
         )
+        if chosen_pat is _QUIT:
+            clear_screen()
+            print("Bye.")
+            return
 
         # ── Filter ────────────────────────────────────────────────────────────
 
