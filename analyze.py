@@ -28,27 +28,9 @@ from pathlib import Path
 
 from common import should_skip, build_match, COUNTRY_WHITELIST
 from common import geo_lookup  # for summary display
-
-# ─── Configuration ───────────────────────────────────────────────────────────
-
-PATTERNS_FILE = Path(__file__).resolve().parent / "patterns.json"
-
-# Combined log format: IP ident user [timestamp] "METHOD URL PROTO" STATUS SIZE "REF" "UA"
-LOG_RE = re.compile(
-    r'^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+) (\S+)" (\d{3}) (\S+) "([^"]*)" "([^"]*)"'
-)
-
-# Timestamp: 11/Jun/2026:06:29:07 +0200  →  ISO 8601
-TS_FMT = "%d/%b/%Y:%H:%M:%S %z"
+from config import LOG_RE, TS_FMT, PATTERNS_FILE
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
-
-MONTH_ABBR = {
-    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
-    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
-}
-
-
 def parse_timestamp(raw: str) -> str:
     """Convert Apache log timestamp to ISO 8601."""
     try:

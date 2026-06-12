@@ -1,0 +1,26 @@
+{
+    "log_format": {
+        "regex": "^(\\S+) \\S+ \\S+ \\[([^\\]]+)\\] \"(\\S+) (\\S+) (\\S+)\" (\\d{3}) (\\S+) \"([^\"]*)\" \"([^\"]*)\"",
+        "timestamp_format": "%d/%b/%Y:%H:%M:%S %z"
+    },
+
+    "patterns_file": "patterns.json",
+
+    "whitelists": {
+        "countries": ["CN", "IN", "LK"],
+        "ips": ["192.168.1.2"]
+    },
+
+    "geoip": {
+        "command": "geoiplookup",
+        "regex_search": "GeoIP Country Edition:\\s*([A-Z]{2})"
+    },
+
+    "filters": {
+        "static_extensions": [
+            ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+            ".ico", ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".mp3", ".webm",
+            ".pdf", ".zip", ".gz", ".tar"
+        ]
+    }
+}
