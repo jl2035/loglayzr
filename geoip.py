@@ -9,7 +9,7 @@ import subprocess
 _cache = {}
 
 # Whitelisted countries — matches from these get skipped entirely
-COUNTRY_WHITELIST = {"SI", "RS", "LK"}
+COUNTRY_WHITELIST = {"CN", "IN", "LK"}
 
 # Whitelisted IP addresses — matches from these get skipped entirely
 IP_WHITELIST = {"192.168.10.254"}

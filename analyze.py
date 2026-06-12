@@ -7,10 +7,10 @@ Usage:
     python3 analyze.py <logfile>
 
     # Screen review (summary first, then JSONL details scroll)
-    python3 analyze.py dkis.si.access.log | less
+    python3 analyze.py example.com.access.log | less
 
     # Save report
-    python3 analyze.py dkis.si.access.log > reports/dkis.si.report.txt
+    python3 analyze.py example.com.access.log > reports/example.com.report.txt
 
     # Pipeline: only critical hits
     python3 analyze.py access.log | grep '"sev":"CRITICAL"'
