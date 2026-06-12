@@ -1,6 +1,6 @@
 # loglayzr
 
-**L**og **L**ayzr — flag the noise, find the attacks.
+**L**oglayzr — flag the noise, find the attacks.
 
 A zero-dependency Python toolkit for scanning Apache/Nginx combined-format access logs for suspicious activity. Uses signature-based pattern matching, GeoIP enrichment, and interactive browsing to surface reconnaissance, exploitation attempts, and brute-force attacks hiding in your logs.
 

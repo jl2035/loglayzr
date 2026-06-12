@@ -12,7 +12,7 @@ _cache = {}
 COUNTRY_WHITELIST = {"CN", "IN", "LK"}
 
 # Whitelisted IP addresses — matches from these get skipped entirely
-IP_WHITELIST = {"192.168.10.254"}
+IP_WHITELIST = {"192.168.1.2"}
 
 # Regex to extract country code from: "GeoIP Country Edition: US, United States"
 _RE = re.compile(r"GeoIP Country Edition:\s*([A-Z]{2})")

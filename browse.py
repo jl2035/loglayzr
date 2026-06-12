@@ -9,6 +9,7 @@ Usage:
 Keys in browse mode:
     N / Enter / Right  →  next match
     P / Left            →  previous match
+    B                   →  back to menu (change category/pattern)
     Q / Ctrl+C          →  quit
 """
 
@@ -114,7 +115,7 @@ def display_match(match: dict, idx: int, total: int):
     print()
 
     # Controls
-    print(f"  {DIM}[N] next  [P] prev  [Q] quit{RESET}")
+    print(f"  {DIM}[N] next  [P] prev  [B] back  [Q] quit{RESET}")
 
 
 # ─── Load patterns with lookup ───────────────────────────────────────────────
@@ -179,78 +180,77 @@ def main():
         print("No suspicious activity found. Clean logs!")
         return
 
-    # ── Build selection menus ────────────────────────────────────────────────
-
-    # Category counts
-    cat_counts = Counter(m["cat"] for m in matches)
-    # Pattern counts per category
-    pat_counts_all = Counter(m["pat"] for m in matches)
-
-    # ── Step 1: pick category ────────────────────────────────────────────────
-
-    cats_sorted = sorted(cat_counts.items(), key=lambda x: x[1], reverse=True)
-    cat_items = [(c, c, n) for c, n in cats_sorted]
-
-    chosen_cat = select_from_list(
-        cat_items,
-        "Select category:",
-        all_label="All categories",
-    )
-
-    # ── Step 2: pick pattern (filtered by category) ──────────────────────────
-
-    if chosen_cat:
-        # Filter matches to this category, then count patterns
-        cat_matches = [m for m in matches if m["cat"] == chosen_cat]
-        pat_in_cat = Counter(m["pat"] for m in cat_matches)
-        pat_sorted = sorted(pat_in_cat.items(), key=lambda x: x[1], reverse=True)
-        pat_items = [(p, p, n) for p, n in pat_sorted]
-        all_total = len(cat_matches)
-    else:
-        pat_sorted_all = sorted(pat_counts_all.items(), key=lambda x: x[1], reverse=True)
-        pat_items = [(p, p, n) for p, n in pat_sorted_all]
-        all_total = len(matches)
-
-    chosen_pat = select_from_list(
-        pat_items,
-        "Select pattern:",
-        all_label="All patterns",
-    )
-
-    # ── Filter matches ───────────────────────────────────────────────────────
-
-    if chosen_cat and chosen_pat:
-        filtered = [m for m in matches if m["cat"] == chosen_cat and m["pat"] == chosen_pat]
-    elif chosen_cat:
-        filtered = [m for m in matches if m["cat"] == chosen_cat]
-    elif chosen_pat:
-        filtered = [m for m in matches if m["pat"] == chosen_pat]
-    else:
-        filtered = matches
-
-    if not filtered:
-        print("No matches for that selection.")
-        return
-
-    # ── Browse mode ──────────────────────────────────────────────────────────
-
-    idx = 0
-    total = len(filtered)
+    # ── Selection + browse loop ────────────────────────────────────────────────
 
     while True:
-        display_match(filtered[idx], idx + 1, total)
+        # Category counts (from full matches, recalculated each iteration)
+        cat_counts = Counter(m["cat"] for m in matches)
+        pat_counts_all = Counter(m["pat"] for m in matches)
 
-        ch = getch()
+        # ── Step 1: pick category ─────────────────────────────────────────────
 
-        if ch in ('q', '\x03'):      # Q or Ctrl+C
-            clear_screen()
-            print("Bye.")
-            break
-        elif ch in ('n', '\r', '\n', ' ', '\x1b[c'):   # N, Enter, Space, Right arrow
-            idx = (idx + 1) % total
-        elif ch in ('p', '\x7f', '\b', '\x1b[d'):       # P, Backspace, Left arrow
-            idx = (idx - 1) % total
-        # Ignore other keys
+        cats_sorted = sorted(cat_counts.items(), key=lambda x: x[1], reverse=True)
+        cat_items = [(c, c, n) for c, n in cats_sorted]
+
+        chosen_cat = select_from_list(
+            cat_items,
+            "Select category:",
+            all_label="All categories",
+        )
+
+        # ── Step 2: pick pattern (filtered by category) ───────────────────────
+
+        if chosen_cat:
+            cat_matches = [m for m in matches if m["cat"] == chosen_cat]
+            pat_in_cat = Counter(m["pat"] for m in cat_matches)
+            pat_sorted = sorted(pat_in_cat.items(), key=lambda x: x[1], reverse=True)
+            pat_items = [(p, p, n) for p, n in pat_sorted]
+        else:
+            pat_sorted_all = sorted(pat_counts_all.items(), key=lambda x: x[1], reverse=True)
+            pat_items = [(p, p, n) for p, n in pat_sorted_all]
+
+        chosen_pat = select_from_list(
+            pat_items,
+            "Select pattern:",
+            all_label="All patterns",
+        )
+
+        # ── Filter ────────────────────────────────────────────────────────────
+
+        if chosen_cat and chosen_pat:
+            filtered = [m for m in matches if m["cat"] == chosen_cat and m["pat"] == chosen_pat]
+        elif chosen_cat:
+            filtered = [m for m in matches if m["cat"] == chosen_cat]
+        elif chosen_pat:
+            filtered = [m for m in matches if m["pat"] == chosen_pat]
+        else:
+            filtered = matches
+
+        if not filtered:
+            print("No matches for that selection.")
+            continue
+
+        # ── Browse mode ───────────────────────────────────────────────────────
+
+        idx = 0
+        total = len(filtered)
+
+        while True:
+            display_match(filtered[idx], idx + 1, total)
+
+            ch = getch()
+
+            if ch in ('q', '\x03'):          # Q or Ctrl+C
+                clear_screen()
+                print("Bye.")
+                return
+            elif ch in ('b',):               # B — back to menu
+                break
+            elif ch in ('n', '\r', '\n', ' ', '\x1b[c'):
+                idx = (idx + 1) % total
+            elif ch in ('p', '\x7f', '\b', '\x1b[d'):
+                idx = (idx - 1) % total
+            # Ignore other keys
 
 
 if __name__ == "__main__":
