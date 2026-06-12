@@ -1,0 +1,460 @@
+[
+  {
+    "name": "env_file_probe",
+    "category": "config_scraping",
+    "severity": "HIGH",
+    "regex": "\\.env\\b",
+    "field": "url",
+    "description": "Attempt to access .env files containing secrets (API keys, DB passwords)"
+  },
+  {
+    "name": "wp_config_probe",
+    "category": "config_scraping",
+    "severity": "CRITICAL",
+    "regex": "wp-config\\.php",
+    "field": "url",
+    "description": "Attempt to read WordPress configuration file with database credentials"
+  },
+  {
+    "name": "git_exposure_probe",
+    "category": "config_scraping",
+    "severity": "HIGH",
+    "regex": "\\.git/",
+    "field": "url",
+    "description": "Attempt to access exposed .git directory (source code leak)"
+  },
+  {
+    "name": "svn_exposure_probe",
+    "category": "config_scraping",
+    "severity": "MEDIUM",
+    "regex": "\\.svn/",
+    "field": "url",
+    "description": "Attempt to access exposed .svn directory"
+  },
+  {
+    "name": "htaccess_probe",
+    "category": "config_scraping",
+    "severity": "HIGH",
+    "regex": "\\.(htaccess|htpasswd)\\b",
+    "field": "url",
+    "description": "Attempt to access Apache access control files"
+  },
+  {
+    "name": "web_config_probe",
+    "category": "config_scraping",
+    "severity": "MEDIUM",
+    "regex": "web\\.config",
+    "field": "url",
+    "description": "Attempt to access IIS/ASP.NET configuration file"
+  },
+  {
+    "name": "backup_file_probe",
+    "category": "config_scraping",
+    "severity": "MEDIUM",
+    "regex": "\\.(bak|backup|sql|tar\\.gz|tgz|zip|7z|rar|old|orig|save|swp|tmp)(\\?|$)",
+    "field": "url",
+    "description": "Attempt to download backup or temporary files"
+  },
+  {
+    "name": "env_json_probe",
+    "category": "config_scraping",
+    "severity": "MEDIUM",
+    "regex": "(credentials|secrets|config)\\.json",
+    "field": "url",
+    "description": "Attempt to access JSON config/credentials files"
+  },
+  {
+    "name": "aws_credentials_probe",
+    "category": "config_scraping",
+    "severity": "CRITICAL",
+    "regex": "(aws|credentials|id_rsa|id_ed25519|id_ecdsa)",
+    "field": "url",
+    "description": "Attempt to access cloud credentials or SSH private keys"
+  },
+  {
+    "name": "web_shell_probe",
+    "category": "backdoor",
+    "severity": "CRITICAL",
+    "regex": "(shell|wso|c99|r57|b374k|dostshell|alfa|madspot|fx29|indoxploit|mini\\.php|uploader|cmd|weevely)\\.php",
+    "field": "url",
+    "description": "Probe for known web shell / backdoor PHP scripts"
+  },
+  {
+    "name": "sql_injection_union",
+    "category": "sqli",
+    "severity": "HIGH",
+    "regex": "(?i)union.*select",
+    "field": "url",
+    "description": "SQL injection UNION SELECT probe"
+  },
+  {
+    "name": "sql_injection_sleep",
+    "category": "sqli",
+    "severity": "HIGH",
+    "regex": "(?i)sleep\\s*\\(",
+    "field": "url",
+    "description": "SQL injection time-based blind probe using SLEEP()"
+  },
+  {
+    "name": "sql_injection_benchmark",
+    "category": "sqli",
+    "severity": "HIGH",
+    "regex": "(?i)benchmark\\s*\\(",
+    "field": "url",
+    "description": "SQL injection time-based blind probe using BENCHMARK()"
+  },
+  {
+    "name": "sql_injection_keywords",
+    "category": "sqli",
+    "severity": "MEDIUM",
+    "regex": "(?i)(information_schema|@@version|char\\s*\\(|cast\\s*\\(|concat\\s*\\()",
+    "field": "url",
+    "description": "SQL injection keywords: information_schema, @@version, CAST, CHAR, CONCAT"
+  },
+  {
+    "name": "sql_injection_boolean",
+    "category": "sqli",
+    "severity": "MEDIUM",
+    "regex": "(?i)(\\bor\\b.*=.*\\bor\\b|'.*--|\\d+'.*'.*=|'\\s+or\\s+'\\d|1\\s*=\\s*1|'\\s*=\\s*')",
+    "field": "url",
+    "description": "SQL injection boolean-based probes (OR 1=1, tautologies)"
+  },
+  {
+    "name": "command_injection_shell",
+    "category": "rce",
+    "severity": "CRITICAL",
+    "regex": "(?i)(/bin/(ba)?sh|/bin/bash|cmd\\.exe|powershell\\.exe)",
+    "field": "url",
+    "description": "Command injection attempting to spawn a shell"
+  },
+  {
+    "name": "command_injection_download",
+    "category": "rce",
+    "severity": "HIGH",
+    "regex": "(?i)(curl\\s|wget\\s|fetch\\s)",
+    "field": "url",
+    "description": "Command injection attempting to download a payload via curl/wget/fetch"
+  },
+  {
+    "name": "command_injection_exec",
+    "category": "rce",
+    "severity": "HIGH",
+    "regex": "(?i)(cmd=|exec=|system\\(|passthru\\(|shell_exec\\(|popen\\(|eval\\(|assert\\()",
+    "field": "url",
+    "description": "Command/function execution keywords in URL parameters"
+  },
+  {
+    "name": "command_injection_python_perl",
+    "category": "rce",
+    "severity": "MEDIUM",
+    "regex": "(?i)(python\\s+-c|perl\\s+-e|ruby\\s+-e|php\\s+-r)",
+    "field": "url",
+    "description": "Command injection using inline Python/Perl/Ruby/PHP interpreters"
+  },
+  {
+    "name": "command_injection_netcat",
+    "category": "rce",
+    "severity": "HIGH",
+    "regex": "(?i)(\\bnc\\s|netcat\\s|ncat\\s)",
+    "field": "url",
+    "description": "Command injection attempting reverse shell via netcat"
+  },
+  {
+    "name": "path_traversal_dots",
+    "category": "path_traversal",
+    "severity": "HIGH",
+    "regex": "(\\.\\./|\\.\\.\\\\|%2e%2e/|%2e%2e%5c)",
+    "field": "url",
+    "description": "Directory traversal using ../ or URL-encoded variants"
+  },
+  {
+    "name": "path_traversal_null",
+    "category": "path_traversal",
+    "severity": "MEDIUM",
+    "regex": "(\\.\\.%00|\\.\\.%2500|%c0%ae)",
+    "field": "url",
+    "description": "Directory traversal using null byte or overlong UTF-8 encoding"
+  },
+  {
+    "name": "xss_script_tag",
+    "category": "xss",
+    "severity": "MEDIUM",
+    "regex": "(?i)<script[^>]*>",
+    "field": "url",
+    "description": "Cross-site scripting using <script> tag in URL"
+  },
+  {
+    "name": "xss_event_handler",
+    "category": "xss",
+    "severity": "MEDIUM",
+    "regex": "(?i)on(load|error|click|mouse|focus|blur|submit|change|key)\\s*=",
+    "field": "url",
+    "description": "Cross-site scripting using JavaScript event handlers"
+  },
+  {
+    "name": "xss_javascript_uri",
+    "category": "xss",
+    "severity": "MEDIUM",
+    "regex": "(?i)javascript\\s*:",
+    "field": "url",
+    "description": "Cross-site scripting using javascript: URI scheme"
+  },
+  {
+    "name": "php_object_injection",
+    "category": "php_exploit",
+    "severity": "HIGH",
+    "regex": "(?i)(base64_decode|gzinflate|str_rot13|eval\\(|assert\\(|preg_replace.*\\/e)",
+    "field": "url",
+    "description": "PHP code injection or obfuscated payload (base64_decode, eval, etc.)"
+  },
+  {
+    "name": "xmlrpc_access",
+    "category": "wordpress",
+    "severity": "MEDIUM",
+    "regex": "xmlrpc\\.php",
+    "field": "url",
+    "description": "Access to WordPress XML-RPC endpoint (often used for brute-force amplification)"
+  },
+  {
+    "name": "wp_login_post",
+    "category": "wordpress",
+    "severity": "MEDIUM",
+    "regex": "wp-login\\.php",
+    "field": "url",
+    "description": "Access to WordPress login page (monitor for brute-force attempts)"
+  },
+  {
+    "name": "wp_admin_access",
+    "category": "wordpress",
+    "severity": "LOW",
+    "regex": "/wp-admin/",
+    "field": "url",
+    "description": "Access to WordPress admin dashboard"
+  },
+  {
+    "name": "wp_cron_abuse",
+    "category": "wordpress",
+    "severity": "MEDIUM",
+    "regex": "wp-cron\\.php.*\\b(?!doing_wp_cron=)",
+    "field": "url",
+    "description": "Direct access to wp-cron.php without the doing_wp_cron parameter (possible DoS)"
+  },
+  {
+    "name": "wp_json_user_enum",
+    "category": "wordpress",
+    "severity": "LOW",
+    "regex": "/wp-json/wp/v2/users",
+    "field": "url",
+    "description": "WordPress REST API user enumeration attempt"
+  },
+  {
+    "name": "wp_content_enum",
+    "category": "wordpress",
+    "severity": "LOW",
+    "regex": "/wp-content/(plugins|themes|uploads)/",
+    "field": "url",
+    "description": "Direct probing of WordPress plugin/theme/upload directories"
+  },
+  {
+    "name": "phpmyadmin_probe",
+    "category": "admin_panel",
+    "severity": "HIGH",
+    "regex": "(?i)(phpmyadmin|phpMyAdmin|pma|mysqladmin)",
+    "field": "url",
+    "description": "Probe for phpMyAdmin or MySQL administration panels"
+  },
+  {
+    "name": "admin_panel_probe",
+    "category": "admin_panel",
+    "severity": "MEDIUM",
+    "regex": "/(admin|administrator|panel|dashboard|backend|manage)/?(index\\.(php|html|asp|aspx|jsp))?$",
+    "field": "url",
+    "description": "Probe for common admin panel paths"
+  },
+  {
+    "name": "debug_endpoint_probe",
+    "category": "admin_panel",
+    "severity": "HIGH",
+    "regex": "(?i)/(debug|staging|dev)([/?.]|$)|/phpinfo([/?.]|$)|/(info|test)\\.php([/?.]|$)|localhost",
+    "field": "url",
+    "description": "Probe for debug pages, test scripts, or development endpoints (path-segment aware)"
+  },
+  {
+    "name": "scanner_user_agent",
+    "category": "recon",
+    "severity": "HIGH",
+    "regex": "(?i)(sqlmap|nikto|gobuster|dirb|wfuzz|nmap|nessus|burp|zgrab|masscan|acunetix|netsparker|qualys|openvas|whatweb|wpscan|joomscan)",
+    "field": "user_agent",
+    "description": "Known vulnerability scanner or security tool user-agent signature"
+  },
+  {
+    "name": "fake_googlebot",
+    "category": "recon",
+    "severity": "MEDIUM",
+    "regex": "(?i)googlebot",
+    "field": "user_agent",
+    "description": "Claims to be Googlebot — flag for IP verification (Google publishes their IP ranges)"
+  },
+  {
+    "name": "bot_claiming_browser",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "(?i)(bot|crawler|spider|scraper)",
+    "field": "user_agent",
+    "description": "Generic bot/crawler/spider user-agent (may be benign, flag for review)"
+  },
+  {
+    "name": "curl_user_agent",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "(?i)^curl/",
+    "field": "user_agent",
+    "description": "Request made via curl (scripted access — flag for review)"
+  },
+  {
+    "name": "wget_user_agent",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "(?i)^(wget|Wget)/",
+    "field": "user_agent",
+    "description": "Request made via wget (scripted access — flag for review)"
+  },
+  {
+    "name": "headless_browser",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "(?i)(headless|phantom|puppeteer|playwright|selenium)",
+    "field": "user_agent",
+    "description": "Headless browser automation tool"
+  },
+  {
+    "name": "empty_user_agent",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "^\"-\"$|^\"\"$|^$",
+    "field": "user_agent",
+    "description": "Request with no user-agent (many bots strip it)"
+  },
+  {
+    "name": "method_not_get_post",
+    "category": "recon",
+    "severity": "LOW",
+    "regex": "^(PUT|DELETE|OPTIONS|TRACE|CONNECT|PATCH)",
+    "field": "method",
+    "description": "Non-standard HTTP method — may indicate WebDAV abuse or reconnaissance"
+  },
+  {
+    "name": "high_status_5xx",
+    "category": "anomaly",
+    "severity": "MEDIUM",
+    "regex": "^5\\d{2}$",
+    "field": "status",
+    "description": "Server error — may indicate successful exploit triggering crashes or broken functionality"
+  },
+  {
+    "name": "high_status_403",
+    "category": "anomaly",
+    "severity": "LOW",
+    "regex": "^403$",
+    "field": "status",
+    "description": "Forbidden access — may indicate probing of protected resources. Flag for rate analysis."
+  },
+  {
+    "name": "unusual_referrer",
+    "category": "anomaly",
+    "severity": "LOW",
+    "regex": "(?i)(semalt|buttons-for-website|darodar|ilovevitaly|priceg|blackhat|seo)",
+    "field": "referrer",
+    "description": "Referrer spam or known malicious referrer domains"
+  },
+  {
+    "name": "log4j_probe",
+    "category": "cve_exploit",
+    "severity": "CRITICAL",
+    "regex": "(?i)(\\$\\{jndi:|\\$\\{java:|%24%7Bjndi:|\\$\\{env:)",
+    "field": "url",
+    "description": "Log4Shell (CVE-2021-44228) JNDI injection probe"
+  },
+  {
+    "name": "spring4shell_probe",
+    "category": "cve_exploit",
+    "severity": "CRITICAL",
+    "regex": "(?i)(class\\.module\\.classLoader|suffix=%>//)",
+    "field": "url",
+    "description": "Spring4Shell (CVE-2022-22965) exploitation probe"
+  },
+  {
+    "name": "phpunit_rce_probe",
+    "category": "cve_exploit",
+    "severity": "CRITICAL",
+    "regex": "(?i)/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin\\.php",
+    "field": "url",
+    "description": "PHPUnit eval-stdin.php RCE (CVE-2017-9841) probe"
+  },
+  {
+    "name": "confluence_rce_probe",
+    "category": "cve_exploit",
+    "severity": "CRITICAL",
+    "regex": "(?i)(/server-info\\?|/confluence/|/wiki/).*(%24%7B|ognl|@Runtime)",
+    "field": "url",
+    "description": "Atlassian Confluence OGNL injection probe"
+  },
+  {
+    "name": "apache_struts_probe",
+    "category": "cve_exploit",
+    "severity": "CRITICAL",
+    "regex": "(?i)(\\.action|\\.do).*((%23|%24)%7B|%5Cu0023|ognl\\.|ProcessBuilder)",
+    "field": "url",
+    "description": "Apache Struts OGNL injection probe (CVE-2017-5638 and variants)"
+  },
+  {
+    "name": "wp_plugin_vuln_probe",
+    "category": "cve_exploit",
+    "severity": "HIGH",
+    "regex": "(?i)/wp-content/plugins/(wp-file-manager|duplicator|elementor|woocommerce|gravityforms|revslider|mailpoet|yoast|contact-form-7|jetpack)/.*(read|download|upload|include|require)",
+    "field": "url",
+    "description": "Probe for known-vulnerable WordPress plugin exploitation paths"
+  },
+  {
+    "name": "exposed_file_probe",
+    "category": "config_scraping",
+    "severity": "HIGH",
+    "regex": "(composer\\.json|package\\.json|yarn\\.lock|Dockerfile|docker-compose\\.yml|Makefile|Gemfile|requirements\\.txt)",
+    "field": "url",
+    "description": "Probe for project configuration and dependency files"
+  },
+  {
+    "name": "suspicious_encoding",
+    "category": "evasion",
+    "severity": "MEDIUM",
+    "regex": "(%[0-9a-fA-F]{2}){10,}",
+    "field": "url",
+    "description": "Heavily URL-encoded request — may be obfuscation attempt"
+  },
+  {
+    "name": "double_encoding",
+    "category": "evasion",
+    "severity": "MEDIUM",
+    "regex": "%25[23][0-9a-fA-F]",
+    "field": "url",
+    "description": "Double URL encoding (%252f, %253c) — common evasion technique"
+  },
+  {
+    "name": "null_byte_injection",
+    "category": "evasion",
+    "severity": "HIGH",
+    "regex": "(%00|\\x00)",
+    "field": "url",
+    "description": "Null byte injection attempt (poison string termination in C-based backends)"
+  },
+  {
+    "name": "long_url",
+    "category": "anomaly",
+    "severity": "LOW",
+    "regex": null,
+    "field": "url",
+    "type": "length_check",
+    "threshold": 500,
+    "description": "Abnormally long URL (>500 chars) — may be buffer overflow or encoded payload"
+  }
+]
