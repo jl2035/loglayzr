@@ -1,7 +1,11 @@
 """
 Shared logic for analyze.py and browse.py.
-Provides static-load filtering and match construction.
+Provides static-load filtering, match construction, and log file resolution.
 """
+
+import gzip
+import os
+from pathlib import Path
 
 from geoip import lookup as geo_lookup                               # noqa: F401
 from config import STATIC_EXTS, COUNTRY_WHITELIST, IP_WHITELIST     # noqa: F401
@@ -63,3 +67,59 @@ def build_match(entry: dict, pattern: dict, **extra) -> dict:
         match["cc"] = cc
 
     return match
+
+
+# ─── Log file resolution and reading ──────────────────────────────────────────
+
+# Extensions to skip — known binaries, not log files
+_SKIP_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp",
+              ".woff", ".woff2", ".ttf", ".eot", ".mp4", ".mp3", ".webm",
+              ".pyc", ".pyo", ".so", ".o", ".a", ".dylib", ".exe", ".dll",
+              ".zip", ".tgz", ".bz2", ".xz", ".7z", ".rar",
+              ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+              ".db", ".sqlite", ".sqlite3"}
+
+
+def _is_binary_ext(path: Path) -> bool:
+    """Skip files with known binary extensions (except .gz which is handled)."""
+    return path.suffix.lower() in _SKIP_EXTS
+
+
+def resolve_log_paths(path: Path) -> list[Path]:
+    """
+    Given a file or directory, return all log file paths to process.
+    Directories are walked recursively. Hidden files/dirs are skipped.
+    """
+    paths = []
+    if path.is_file():
+        paths.append(path)
+    elif path.is_dir():
+        for root, dirs, files in os.walk(path):
+            # Skip hidden directories
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
+            for name in sorted(files):
+                if name.startswith("."):
+                    continue
+                fp = Path(root) / name
+                if _is_binary_ext(fp):
+                    continue
+                paths.append(fp)
+    return paths
+
+
+def iter_log_lines(path: Path):
+    """
+    Open a log file and yield stripped lines.
+    Handles .gz files transparently via gzip decompression.
+    """
+    if path.suffix == ".gz":
+        f = gzip.open(path, "rt", errors="replace")
+    else:
+        f = open(path, "r", errors="replace")
+
+    with f:
+        for line in f:
+            line = line.strip()
+            if line:
+                yield line
+

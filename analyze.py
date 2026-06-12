@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Log analyzer for Apache/Nginx combined-format access logs.
-Matches entries against suspicious patterns defined in patterns.json.
-
-Usage:
-    python3 analyze.py <logfile>
+|Log analyzer for Apache/Nginx combined-format access logs.
+|Matches entries against suspicious patterns defined in patterns.json.
+|Accepts a file or a directory (walked recursively, .gz supported).
+|
+|Usage:
+|    python3 analyze.py <logfile>
+|    python3 analyze.py <directory>
 
     # Screen review (summary first, then JSONL details scroll)
     python3 analyze.py example.com.access.log | less
@@ -28,6 +30,7 @@ from pathlib import Path
 
 from common import should_skip, build_match, COUNTRY_WHITELIST
 from common import geo_lookup  # for summary display
+from common import resolve_log_paths, iter_log_lines
 from config import LOG_RE, TS_FMT, PATTERNS_FILE
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -82,8 +85,13 @@ def main():
         sys.exit(1)
 
     log_path = Path(sys.argv[1])
-    if not log_path.is_file():
-        print(f"Error: file not found: {log_path}", file=sys.stderr)
+    if not log_path.exists():
+        print(f"Error: not found: {log_path}", file=sys.stderr)
+        sys.exit(1)
+
+    log_paths = resolve_log_paths(log_path)
+    if not log_paths:
+        print(f"Error: no log files found: {log_path}", file=sys.stderr)
         sys.exit(1)
 
     # Load patterns
@@ -97,7 +105,7 @@ def main():
         print(f"Error: invalid JSON in patterns file: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Process log
+    # Process log(s)
     parsed = 0
     skipped = 0
     matches = []                        # list of flat dicts for JSONL output
@@ -108,11 +116,8 @@ def main():
     hits_by_country = Counter()         # country → match count (non-whitelisted)
     ip_patterns = defaultdict(Counter)  # IP → {pattern_name: count}
 
-    with open(log_path, errors="replace") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
+    for log_path in log_paths:
+        for line in iter_log_lines(log_path):
             entry = parse_line(line)
             if entry is None:
                 skipped += 1
@@ -153,7 +158,10 @@ def main():
 
     # ── Summary footer ───────────────────────────────────────────────────────
     print()
-    print(f"=== SUMMARY: {log_path.name} ===")
+    if len(log_paths) == 1:
+        print(f"=== SUMMARY: {log_paths[0].name} ===")
+    else:
+        print(f"=== SUMMARY: {log_paths[0].parent.name}/ ({len(log_paths)} files) ===")
     print()
 
     print(f"Lines parsed:    {parsed:,}")
